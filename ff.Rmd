@@ -1,0 +1,180 @@
+---
+title: "Biostatisztika féléves feladat"
+author: "Kováts Máté - FBVSDL"
+date: "`r Sys.Date()`"
+output: 
+  html_document:
+    toc: true
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Setup
+
+Féléves feladatomhoz a SimData7.csv nevű adatbázist használtam. Nulladik lépésként betöltöm a csv fájlt db nevű dataframe-be. A nem nominális skálán numerikus értékként van tárolva, ezt átalakítom faktorrá.
+
+```{r}
+db <- read.table("SimData7.csv", header=TRUE, sep=";", dec=",", stringsAsFactors=FALSE)
+db$Sex <- factor(db$Sex, levels = c(0, 1), labels = c("Nő", "Férfi"))
+```
+
+## 1. feladat
+
+### Kategoriális változó: Szemszín
+
+A választott kategoriális változóm a szemszín, ami nominális skálán mérhető, tehát csak azt tudjuk megállítani két érték között, hogy megegyezik-e. Ennek megfelelően minőségi változókra alkalmazható módszereket választottam, mégpedig egyre, mivel egyidejűleg most csak a szemszínt vizsgálom.
+
+```{r}
+gyak_sor <- table(db$EyeColour)
+gyak_sor
+```
+
+A gyakorisági sor alapján megállapítható, hogy a szemszín 4 lehetséges értéket vehet fel: fekete, kék, barna, zöld. Ez alapján kiderül, hogy a legtöbb embernek barna szeme van (54 fő), míg a legkevesebbnek fekete (45 fő). A különbségek nem drasztikusak, de jól érzékelhetők. A gyakorisági sor mivel darabszámot jelöl, felhasználtam relatív gyakoriság számításához, hogy lássam, hogy a minta hányad részét alkotják az egyes kategóriák.
+
+```{r}
+prop.table(gyak_sor)
+```
+
+Ez alapján elmondható, hogy viszonylag egyenletes eloszlású a szemszín a mintában, jelentős dominancia vagy ritkaság nem figyelhető meg.
+
+A gyakorisági sort oszlopdigramként is megjelenítettem.
+
+```{r}
+barplot(gyak_sor, main="Szemszín szerinti megoszlás", ylab = "Gyakoriság [fő]", xlab = "Szemszínek", ylim = c(0, 60))
+```
+
+Szemre is megállapítható az, ami a relatív gyakoriság alapján, hogy nem azonos mértékben vannak jelen a különböző szemszínű emberek, a barna és a zöld szemszín kissé gyakoribb, míg a fekete a legritkább, de ez a különbség nem számottevő.
+
+### Folytonos változó: Testsúly
+
+A választott folytonos változóm a testsúly. Ez viszont már arány skálán mért, vagyis mennyiségi változó, ezért gyakorisági sornak nem lenne értelme. Ehelyett osztályközös gyakorisági sort készítettem: az adatokat 10 kg-os intervallumokra osztottam, a minimum és maximum érték alapján dinamikusan meghatározva az intervallumhatárokat:
+
+```{r}
+min_from <- floor(min(db$BodyWeight) / 10) * 10
+max_to <- ceiling(max(db$BodyWeight) / 10) * 10 
+table(cut(db$BodyWeight, seq(min_from,max_to, 10)))
+```
+
+Az eredményből jól látszik, hogy az adatok többsége az 50–70 kg-os tartományban helyezkedik el, tehát ebben az intervallumban koncentrálódik a minta jelentős része.
+
+Grafikusan is megszeretném jeleníteni, viszont nem hisztrogramot választottam, mivel tulajdonképpen hasonló osztályközött gyakorisági sort kapnék hasonló tulajdonságokkal, mint például osztályonként konstans becslés és osztályközválasztás. Ehelyett magfüggvényes sűrűségbecslőt használok, mert folytonos változót jobban prezentálhat egy folytonos függvény.
+
+```{r}
+plot(density(db$BodyWeight), main = "A testtömeg sűrűségbecslése")
+```
+
+Nem adtam meg neki szórást, optimálisnak a 2,984-et választotta, ezáltal a görbe viszonylag sima. Egyértelműen kirajzolódik a fő csúcs az 50–70 kg közötti tartományban. Továbbiakban középmutatókat és szóródási mutatókat számítottam, hogy minél jobban jellemezhető legyen az eloszlás numerikusan.
+
+Átlag:
+
+```{r}
+mean(db$BodyWeight)
+```
+
+Medián:
+
+```{r}
+median(db$BodyWeight)
+```
+
+Az átlag és a medián közelsége enyhén szimmetrikus eloszlásra utal.
+
+Szórás:
+
+```{r}
+sd(db$BodyWeight)
+```
+
+A testsúly szóródása mérsékelt, a legtöbb érték ±10 kg-on belül van az átlag körül. Ezek alapján az eloszlás egymóduszú, minimálisan jobbra ferde (mivel az átlag kicsit nagyobb, mint a medián), de alapvetően nem torz vagy széttartó.
+
+## 2. feladat
+
+### Nem és szemszín kapcsolata
+
+Szemszínhez a választott minőségi változó a nem. A kérdés az, hogy van-e kapcsolat közöttük, azaz a nem tendenciózusan befolyásolja-e a szemszín eloszlását a mintában.
+
+A kérdés megválaszolásához a szemszín feltételes eloszlását vizsgáltam a nemek mentén kontingencia táblával. A kérdésnek megfelelően feltételezzük, hogy tudjuk az alany nemét, akkor jelentős különbségek figyelhetőek meg az egyes szemszínek eloszlásában. Látható, hogy férfi esetén az esetek majdnem 30%-ában barna, míg nők esetében szintén majdnem 30%-ban a zöld szemszín dominál.
+
+```{r}
+kereszttabla <- table(db$Sex, db$EyeColour)
+prop.table(kereszttabla, 1)
+```
+Nem lenne kapcsolat a kettő között, amennyiben a szemszínek eloszlása nem mutatna jelentős eltéréseket a nemek között. Ez arra utal, hogy van  kapcsolat a nem és a szemszín között. Vizualizálhatjuk is. 
+
+```{r}
+mosaicplot(table(db$EyeColour, db$Sex), main = "Szemszín eloszlása nemek között", ylab = "Nemek", xlab = "Szemszínek")
+```
+A mozaikdiagram jól mutatja a nemek közötti eloszlásbeli különbségeket szemszín szerint. Ha nem lenne kapcsolat a két változó között, akkor a vízszintes, nemeket elválasztó vonal egy magasságban lenne az összes szemszín esetében.
+
+### Testtömeg és GPT májenzim kapcsolata
+
+Először vizuálizáltam, hogy benyomást szerezzek. Ehhez szóródási diagrammot használtam.
+
+```{r}
+plot(db$GPT ~ db$BodyWeight, 
+     main = "GPT mennyisége a testtömeg függvényében", 
+     xlab = "Testtömeg [kg]", 
+     ylab = "GPT [U/L]", 
+     pch = 16, col = rgb(0, 0, 0, 0.4))
+```
+
+Leolvasható az ábráról, hogy nincs határozott lineáris kapcsolat a testtömeg és a GPT között. Mindkét változó tekintetében vannak outlierek, melyek torzítanak. Benyomáson túl számszerűen is megakarom határozni a lehetséges kapcsolat erősségét és irányát. Ismerve, hogy valószínűleg nem lineáris a kapcsolat, nem az alapértelmezett Pearson-féle módszert használom.
+
+
+```{r}
+cor(db$BodyWeight, db$GPT, method="spearman")
+```
+
+Az eredmény közel van a nullához, tehát nagy gyenge vagy nincs érdemi monoton kapcsolat a két változó között. Az érték negatív, tehát ha van is minimális kapcsolat, az negatív, vagyis ha nő a testtömeg, akkor csökken a vizsgált májenzim mennyisége, de ez valószínűleg statisztikailag nem szignifikáns.
+
+## 3. feladat
+
+
+## 4. feladat
+
+### Az alanyok neme és szemszíne között nincs szignifikáns összefüggés
+
+Mindkettő változó nominális skálán mért kategorikus változó, ezért khi-négyzet próba, amivel megvizsgáljuk, hogy a két változó előfordulási gyakoriságai eltérnek-e attól, amit akkor várnánk, ha valóban függetlenek lennének.
+
+```{r}
+chisq.test(kereszttabla)
+```
+
+95%-os szignifikancia szinttel számolva, a p-érték meghaladja a 0,05-t, ezért a nullhipotézis helytálló, a változók között nincs szignifikáns összefüggés.
+
+### Fiúk és lányok testtömege nem tér el szignifikánsan
+
+A nem kvalitatív, míg a testtömeg kvantitatív folytonos változó, ezért független mintás t-próbát alkalmazok. 
+
+```{r}
+t.test(db$BodyWeight ~ db$Sex, data = db, var.equal = FALSE)
+```
+A p-érték jóval kisebb mint 0.05, vagyis a null hipotézist el kell vetni. A két nem testtömege között szignifikáns eltérés van. 
+
+### GOT és GPT májenzimek értékei között nincs szignifikáns kapcsolat
+
+Mindkettő folytonos változó, ezért korrelációs vizsgálatot választok. Nullhipozétis, hogy a GOT és GPT változók között nincs szignifikáns kapcsolat, tehát a korrelációs együtthatónak.
+
+```{r}
+hist(db$GOT, 
+     main = "GOT májenzim eloszlása",
+     ylab = "[db]",
+     xlab = "[U/L]")
+```
+```{r}
+hist(db$GPT,
+  main = "GPT májenzim eloszlása",
+  ylab = "[db]",
+  xlab = "[U/L]")
+```
+
+Készítettem két hisztogramot, hogy lássam a két változó normál eloszlású-e. Mivel nemm, ezért Spearman-féle rangkorrelációt alkalmazok.
+
+```{r}
+cor(db$GOT, db$GPT, method="spearman")
+cor.test(db$GOT, db$GPT, method = "spearman")
+```
+
+Az eredmény alapján erős pozitív kapcsolat van a két változó között, mégpedig pozitív. A p-érték messze kisebb mint a 0.05, ezért a null hipotézist elvethetjük, vagyis van szignifikáns kapcsolat a két változó között.
