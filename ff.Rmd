@@ -65,7 +65,7 @@ Grafikusan is megszeretném jeleníteni, viszont nem hisztrogramot választottam
 plot(density(db$BodyWeight), main = "A testtömeg sűrűségbecslése")
 ```
 
-Nem adtam meg neki szórást, optimálisnak a 2,984-et választotta, ezáltal a görbe viszonylag sima. Egyértelműen kirajzolódik a fő csúcs az 50–70 kg közötti tartományban. Továbbiakban középmutatókat és szóródási mutatókat számítottam, hogy minél jobban jellemezhető legyen az eloszlás numerikusan.
+Nem adtam meg neki szórást, optimálisnak a 2,984-et választotta, ezáltal a görbe viszonylag sima. Egyértelműen kirajzolódik a csúcs az 50–70 kg közötti tartományban. Továbbiakban középmutatókat és szóródási mutatókat számítottam, hogy minél jobban jellemezhető legyen az eloszlás numerikusan.
 
 Átlag:
 
@@ -101,11 +101,12 @@ A kérdés megválaszolásához a szemszín feltételes eloszlását vizsgáltam
 kereszttabla <- table(db$Sex, db$EyeColour)
 prop.table(kereszttabla, 1)
 ```
-Nem lenne kapcsolat a kettő között, amennyiben a szemszínek eloszlása nem mutatna jelentős eltéréseket a nemek között. Ez arra utal, hogy van  kapcsolat a nem és a szemszín között. Vizualizálhatjuk is. 
+Nem lenne kapcsolat a kettő között, amennyiben a szemszínek eloszlása nem mutatna jelentős eltéréseket a nemek között. Ez arra utal, hogy van kapcsolat a nem és a szemszín között. Vizualizálhatjuk is. 
 
 ```{r}
 mosaicplot(table(db$EyeColour, db$Sex), main = "Szemszín eloszlása nemek között", ylab = "Nemek", xlab = "Szemszínek")
 ```
+
 A mozaikdiagram jól mutatja a nemek közötti eloszlásbeli különbségeket szemszín szerint. Ha nem lenne kapcsolat a két változó között, akkor a vízszintes, nemeket elválasztó vonal egy magasságban lenne az összes szemszín esetében.
 
 ### Testtömeg és GPT májenzim kapcsolata
@@ -131,6 +132,13 @@ Az eredmény közel van a nullához, tehát nagy gyenge vagy nincs érdemi monot
 
 ## 3. feladat
 
+A gyermekek testtömegének 95%-os konfidenciaintervallumát a Student-féle t-eloszlás alapján számítom, mivel a populáció szórása nem ismert, és egy minta áll rendelkezésre.
+
+```{r}
+t.test(db$BodyWeight, conf.level = 0.95)
+```
+
+Ez alapján 95%-os valószínűséggel a teljes populáció átlagos testtömege a 58.05kg - 60.77kg-os intervallumba esik.
 
 ## 4. feladat
 
@@ -151,7 +159,7 @@ A nem kvalitatív, míg a testtömeg kvantitatív folytonos változó, ezért f�
 ```{r}
 t.test(db$BodyWeight ~ db$Sex, data = db, var.equal = FALSE)
 ```
-A p-érték jóval kisebb mint 0.05, vagyis a null hipotézist el kell vetni. A két nem testtömege között szignifikáns eltérés van. 
+A p-érték jóval kisebb mint 0,05, vagyis a null hipotézist el kell vetni. A két nem testtömege között szignifikáns eltérés van. 
 
 ### GOT és GPT májenzimek értékei között nincs szignifikáns kapcsolat
 
@@ -170,11 +178,11 @@ hist(db$GPT,
   xlab = "[U/L]")
 ```
 
-Készítettem két hisztogramot, hogy lássam a két változó normál eloszlású-e. Mivel nemm, ezért Spearman-féle rangkorrelációt alkalmazok.
+Készítettem két hisztogramot, hogy lássam a két változó normál eloszlású-e. Mivel nem, ezért Spearman-féle rangkorrelációt alkalmazok.
 
 ```{r}
 cor(db$GOT, db$GPT, method="spearman")
 cor.test(db$GOT, db$GPT, method = "spearman")
 ```
 
-Az eredmény alapján erős pozitív kapcsolat van a két változó között, mégpedig pozitív. A p-érték messze kisebb mint a 0.05, ezért a null hipotézist elvethetjük, vagyis van szignifikáns kapcsolat a két változó között.
+Az eredmény alapján erős pozitív kapcsolat van a két változó között, mégpedig pozitív. A p-érték messze kisebb mint a 0,05, ezért a null hipotézist elvethetjük, vagyis van szignifikáns kapcsolat a két változó között.
